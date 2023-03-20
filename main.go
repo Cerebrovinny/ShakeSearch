@@ -10,8 +10,15 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
 )
+
+var cache = struct {
+	sync.RWMutex
+	m map[string][]string
+}{m: make(map[string][]string)}
 
 func main() {
 	searcher := Searcher{}
@@ -42,6 +49,13 @@ type Searcher struct {
 	SuffixArray   *suffixarray.Index
 }
 
+type PaginatedResults struct {
+	Results     []string `json:"results"`
+	CurrentPage int      `json:"current_page"`
+	TotalPages  int      `json:"total_pages"`
+	PerPage     int      `json:"per_page"`
+}
+
 func handleSearch(searcher Searcher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query, ok := r.URL.Query()["q"]
@@ -50,10 +64,39 @@ func handleSearch(searcher Searcher) func(w http.ResponseWriter, r *http.Request
 			w.Write([]byte("missing search query in URL params"))
 			return
 		}
+
+		pageStr := r.URL.Query().Get("page")
+		perPageStr := r.URL.Query().Get("perPage")
+
+		page, err := strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+
+		perPage, err := strconv.Atoi(perPageStr)
+		if err != nil || perPage < 1 {
+			perPage = 10
+		}
+
 		results := searcher.Search(strings.ToLower(query[0]))
+		totalPages := (len(results) + perPage - 1) / perPage
+
+		start := (page - 1) * perPage
+		end := start + perPage
+		if end > len(results) {
+			end = len(results)
+		}
+
+		paginatedResults := PaginatedResults{
+			Results:     results[start:end],
+			CurrentPage: page,
+			TotalPages:  totalPages,
+			PerPage:     perPage,
+		}
+
 		buf := &bytes.Buffer{}
 		enc := json.NewEncoder(buf)
-		err := enc.Encode(results)
+		err = enc.Encode(paginatedResults)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("encoding failure"))
@@ -65,21 +108,38 @@ func handleSearch(searcher Searcher) func(w http.ResponseWriter, r *http.Request
 }
 
 func (s *Searcher) Load(filename string) error {
-	dat, err := ioutil.ReadFile(filename)
+	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return fmt.Errorf("Load: %w", err)
+		return err
 	}
-	s.CompleteWorks = strings.ToLower(string(dat))
-	s.SuffixArray = suffixarray.New([]byte(s.CompleteWorks))
+
+	s.CompleteWorks = string(content)
+	s.SuffixArray = suffixarray.New(content)
+
 	return nil
 }
 
 func (s *Searcher) Search(query string) []string {
-	regex := regexp.MustCompile(`\b` + query + `\w*\b`)
-	idxs := s.SuffixArray.FindAllIndex(regex, -1)
+	reg := regexp.MustCompile(fmt.Sprintf(`(?i)(\b%s[\w]*\b)`, query))
+	matches := s.SuffixArray.FindAllIndex(reg, -1)
+
 	results := []string{}
-	for _, idx := range idxs {
-		results = append(results, s.CompleteWorks[idx[0]-250:idx[1]+250])
+	for _, match := range matches {
+		start := match[0]
+		end := match[1]
+
+		excerptStart := start - 50
+		if excerptStart < 0 {
+			excerptStart = 0
+		}
+
+		excerptEnd := end + 50
+		if excerptEnd > len(s.CompleteWorks) {
+			excerptEnd = len(s.CompleteWorks)
+		}
+
+		results = append(results, s.CompleteWorks[excerptStart:excerptEnd])
 	}
+
 	return results
 }
