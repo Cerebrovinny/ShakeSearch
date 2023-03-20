@@ -14,9 +14,10 @@ const Controller = {
     const table = document.getElementById("table-body");
     const rows = [];
     for (let result of results) {
-      rows.push(`<tr>${result}<tr/>`);
+      const formattedResult = result.replace(/(\r\n|\n|\r)/gm, "<br>").replace(/\s\s+/g, " ");
+      rows.push(`<tr><td>${formattedResult}<td/><tr/>`);
     }
-    table.innerHTML = rows;
+    table.innerHTML = rows.join("");
   },
 };
 
