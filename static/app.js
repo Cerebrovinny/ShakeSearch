@@ -1,3 +1,11 @@
+function highlightSearchTerms(text, query) {
+  const queryTerms = query.split(/\s+/);
+  const escapedTerms = queryTerms.map(term => term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+  const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
+  const normalizedText = text.replace(/\s\s+/g, " ");
+  return normalizedText.replace(regex, '<mark>$1</mark>');
+}
+
 const Controller = {
   search: async (ev, page = 1) => {
     ev.preventDefault();
@@ -9,11 +17,13 @@ const Controller = {
 },
 
   updateTable: (results) => {
+    const query = document.getElementById("query").value;
     const table = document.getElementById("table-body");
     const rows = [];
     for (let result of results.results) {
       const formattedResult = result.replace(/(\r\n|\n|\r)/gm, "<br>").replace(/\s\s+/g, " ");
-      rows.push(`<tr><td>${formattedResult}</td></tr>`);
+      const highlightedResult = highlightSearchTerms(formattedResult, query);
+      rows.push(`<tr><td>${highlightedResult}</td></tr>`);
     }
     table.innerHTML = rows.join("");
 
