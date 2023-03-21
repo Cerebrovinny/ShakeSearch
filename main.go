@@ -128,13 +128,13 @@ func (s *Searcher) Search(query string) []string {
 		start := match[0]
 		end := match[1]
 
-		excerptStart := start - 50
+		excerptStart := strings.LastIndex(s.CompleteWorks[:start], ".") + 1
 		if excerptStart < 0 {
 			excerptStart = 0
 		}
 
-		excerptEnd := end + 50
-		if excerptEnd > len(s.CompleteWorks) {
+		excerptEnd := strings.Index(s.CompleteWorks[end:], ".") + end
+		if excerptEnd < 0 {
 			excerptEnd = len(s.CompleteWorks)
 		}
 
