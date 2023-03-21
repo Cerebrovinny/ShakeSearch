@@ -13,7 +13,7 @@ const Controller = {
     const rows = [];
     for (let result of results.data) {
       const formattedResult = result.replace(/(\r\n|\n|\r)/gm, "<br>").replace(/\s\s+/g, " ");
-      rows.push(`<tr><td>${formattedResult}<td/><tr/>`);
+      rows.push(`<tr><td>${formattedResult}</td></tr>`);
     }
     table.innerHTML = rows.join("");
 
