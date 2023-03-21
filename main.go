@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode"
 )
 
 var cache = struct {
@@ -128,7 +129,9 @@ func (s *Searcher) Search(query string) []string {
 		start := match[0]
 		end := match[1]
 
-		excerptStart := strings.LastIndex(s.CompleteWorks[:start], ".") + 1
+		excerptStart := strings.LastIndexFunc(s.CompleteWorks[:start], func(c rune) bool {
+			return unicode.IsUpper(c) || c == '.'
+		}) + 1
 		if excerptStart < 0 {
 			excerptStart = 0
 		}

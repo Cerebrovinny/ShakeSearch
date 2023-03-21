@@ -2,8 +2,8 @@ function highlightSearchTerms(text, query) {
   const queryTerms = query.split(/\s+/);
   const escapedTerms = queryTerms.map(term => term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
   const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
-  const normalizedText = text.replace(/\s\s+/g, " ");
-  return normalizedText.replace(regex, '<mark>$1</mark>');
+  const cleanedText = text.replace(/[_\[\]]/g, "").replace(/\s\s+/g, " ");
+  return cleanedText.replace(regex, '<mark>$1</mark>');
 }
 
 const Controller = {
