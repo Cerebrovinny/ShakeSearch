@@ -3,15 +3,15 @@ const Controller = {
     ev.preventDefault();
     const form = document.getElementById("form");
     const data = Object.fromEntries(new FormData(form));
-    const response = await fetch(`/search?q=${data.query}&page=${page}`);
+    const response = await fetch(`/search?q=${data.query}&page=${data.page}&perPage=${data.perPage}`);
     const results = await response.json();
     Controller.updateTable(results);
-  },
+},
 
   updateTable: (results) => {
     const table = document.getElementById("table-body");
     const rows = [];
-    for (let result of results.data) {
+    for (let result of results.results) {
       const formattedResult = result.replace(/(\r\n|\n|\r)/gm, "<br>").replace(/\s\s+/g, " ");
       rows.push(`<tr><td>${formattedResult}</td></tr>`);
     }
