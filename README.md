@@ -2,6 +2,9 @@
 
 Welcome to ShakeSearch, a simple web app for searching the complete works of William Shakespeare. The app provides an easy-to-use interface to search for any text string within Shakespeare's writings.
 
+## Check the live version here:
+https://rocky-brook-64249.herokuapp.com/
+
 Features and Improvements
 
 The following improvements have been made to enhance the user experience and the app's functionality:
